@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div v-if="!timerFinished">
+            <p>Time remaining: {{ secondsRemaining }}</p>
+            <button @click="startTimer" v-if="!timerRunning">Start</button>
+        </div>
+        <div v-else>
+            <h1>Good Luck!</h1>
+            <button @click="resetTimer">Restart</button>
+        </div>
+        <div :class="{ disabled: timerFinished }">
+            <form>
+                <input type="text" placeholder="Enter your name" />
+                <input type="text" placeholder="Enter your email" />
+                <input type="text" placeholder="Enter your phone number" />
+                <button type="submit">Submit</button>
+            </form>
+            <p>Other actions on this screen</p>
+        </div>
+    </div>
+
+    <!-- Include Vue 3 from CDN -->
+    <script src="https://unpkg.com/vue@next"></script>
+
+    <script>
+        const { ref, watch, onMounted, createApp } = Vue;
+
+        createApp({
+            setup() {
+                const initialTime = 120; // Set initial time in seconds
+                const seconds = ref(initialTime);
+                const finished = ref(false);
+                const running = ref(false);
+                let interval;
+
+                const startTimer = () => {
+                    running.value = true;
+                    interval = setInterval(() => {
+                        if (seconds.value > 0) {
+                            seconds.value--;
+                            localStorage.setItem('seconds', seconds.value);
+                        } else {
+                            clearInterval(interval);
+                            finished.value = true;
+                            running.value = false;
+                            localStorage.setItem('finished', true);
+                        }
+                    }, 1000);
+                };
+
+                const resetTimer = () => {
+                    clearInterval(interval);
+                    seconds.value = initialTime;
+                    finished.value = false;
+                    running.value = false;
+                    localStorage.removeItem('seconds');
+                    localStorage.removeItem('finished');
+                };
+
+                const loadState = () => {
+                    const savedSeconds = localStorage.getItem('seconds');
+                    const savedFinished = localStorage.getItem('finished');
+                    if (savedSeconds !== null) {
+                        seconds.value = parseInt(savedSeconds, 10);
+                    }
+                    if (savedFinished === 'true') {
+                        finished.value = true;
+                    }
+                };
+
+                watch(seconds, (newValue) => {
+                    if (newValue === 60) {
+                        alert('Only 1 minute remaining!');
+                    }
+                });
+
+                onMounted(() => {
+                    loadState();
+                    if (seconds.value > 0 && seconds.value < initialTime && !finished.value) {
+                        startTimer();
+                    }
+                });
+
+                return {
+                    secondsRemaining: seconds,
+                    timerFinished: finished,
+                    timerRunning: running,
+                    startTimer,
+                    resetTimer,
+                };
+            },
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
